@@ -1,0 +1,16 @@
+#/etc/systemd/systemapi.service
+[Unit]
+Description=Backend
+
+[Service]
+WorkingDirectory=/var/www/api/Template.Api
+ExecStart=/usr/bin/dotnet /var/www/api/Template.Api/bin/Debug/net5.0/Template.Api.dll
+Restart=always
+RestartSec=10
+SyslogIdentifier=api
+User=www-data
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+[Install]
+WantedBy=multi-user.target
