@@ -6,6 +6,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using Template.Infraestructure.Extensions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Template.Infraestructure.Filters;
+using System;
 
 namespace Template.Api
 {
@@ -16,22 +21,51 @@ namespace Template.Api
             Configuration = configuration;
         }
 
+        readonly string CorsConfiguration = "_corsConfiguration";
+
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddControllers();
-
-            services.AddDbContext<{{Database_Name}}Context>(options =>
-               options.UseNpgsql(Configuration.GetConnectionString("{{Database_Name}}Connection"))
-            );
-
-            services.AddSwaggerGen(c =>
+            services.AddCors(options =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Template.Api", Version = "v1" });
+                options.AddPolicy(name: CorsConfiguration,
+                 builder =>
+                 {
+                     builder.SetIsOriginAllowedToAllowWildcardSubdomains()
+                            .WithOrigins("https://*.domain.com", "https://localhost:3000")
+                            .AllowAnyMethod()
+                            .AllowCredentials()
+                            .AllowAnyHeader()
+                            .Build();
+                 });
             });
+
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+            services.AddControllers(options =>
+            {
+                options.Filters.Add<GlobalExceptionFilter>();
+            }).AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+            })
+           .ConfigureApiBehaviorOptions(options =>
+           {
+               //options.SuppressModelStateInvalidFilter = true;
+           });
+
+            services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+
+           
+            services.AddOptions(Configuration);
+            services.AddMvc();
+            services.AddDbContexts(Configuration);
+            services.AddServices();
+            services.AddSwagger();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -47,6 +81,11 @@ namespace Template.Api
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors(corsPolicyBuilder =>
+               corsPolicyBuilder.WithOrigins("https://domain.com", "http://localhost:3000")
+              .AllowAnyMethod()
+              .AllowAnyHeader());
 
             app.UseAuthorization();
 
