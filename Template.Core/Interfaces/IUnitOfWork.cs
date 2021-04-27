@@ -7,6 +7,8 @@ namespace Template.Core.Interfaces
     {
         IUserRepository UserRepository { get; }
 
+        ISecurityRepository SecurityRepository { get; }
+
         void SaveChanges();
 
         Task SaveChangesAsync();

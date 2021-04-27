@@ -1,12 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Template.Core.CustomEntities;
+using Template.Core.Interfaces;
+using Template.Core.Services;
+using Template.Infraestructure.Data;
+using Template.Infraestructure.Interfaces;
+using Template.Infraestructure.Repositories;
+using Template.Infraestructure.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System;
-using Template.Core.CustomEntities;
-using Template.Core.Interfaces;
-using Template.Infraestructure.Data;
-using Template.Infraestructure.Repositories;
+using Template.Infrastructure.Interfaces;
+using Template.Infrastructure.Services;
+using Template.Infrastructure.Options;
 
 namespace Template.Infraestructure.Extensions
 {
@@ -27,9 +34,22 @@ namespace Template.Infraestructure.Extensions
         public static IServiceCollection AddServices(this IServiceCollection services)
         {
             
+            services.AddTransient<IUserService, UserService>();
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
             services.AddTransient<IUnitOfWork, UnitOfWork>();
+            services.AddTransient<ISendGridService, SendGridService>();
 
+            services.AddTransient<ISecurityService, SecurityService>();
+            services.AddSingleton<IPasswordService, PasswordService>();
+
+
+            services.AddSingleton<IUriService>(provider =>
+            {
+                var accesor = provider.GetRequiredService<IHttpContextAccessor>();
+                var request = accesor.HttpContext.Request;
+                var absoluteUri = string.Concat(request.Scheme, "://", request.Host.ToUriComponent());
+                return new UriService(absoluteUri);
+            });
          
             return services;
         }
@@ -37,6 +57,8 @@ namespace Template.Infraestructure.Extensions
         public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<PaginationOptions>(options => configuration.GetSection("Pagination").Bind(options));
+
+            services.Configure<PasswordOptions>(options => configuration.GetSection("PasswordOptions").Bind(options));
 
             return services;
         }

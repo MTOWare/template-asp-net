@@ -28,9 +28,9 @@ namespace Template.Core.Services
 
             var users = _unitOfWork.UserRepository.GetAll();
 
-            if (filters.Email != null)
+            if (filters.Query != null)
             {
-                users = users.Where(x => x.Email == filters.Email);
+                users = users.Where(x => x.Email.ToLower().Contains(filters.Query));
             }
 
             if (filters.Date != null)

@@ -8,7 +8,7 @@ namespace Template.Core.QueryFilters
     {
         public DateTime? Date { get; set; }
 
-        public string Email { get; set; }
+        public string Query { get; set; }
 
         public int PageSize { get; set; }
 
